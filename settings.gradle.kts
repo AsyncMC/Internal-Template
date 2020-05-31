@@ -1,2 +1,2 @@
-rootProject.name = "bedrock-protocol"
+rootProject.name = "template"
 
