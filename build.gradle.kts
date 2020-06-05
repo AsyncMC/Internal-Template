@@ -3,14 +3,16 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     kotlin("jvm") version "1.3.72"
     jacoco
+    `maven-publish`
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_14
+    sourceCompatibility = JavaVersion.VERSION_13
     targetCompatibility = JavaVersion.VERSION_13
 }
 
-val moduleName = "com.github.asyncmc.protocol.bedrock"
+val moduleName = "com.github.asyncmc.template.internal"
+val isSnapshot = version.toString().endsWith("SNAPSHOT")
 
 repositories {
     jcenter()
@@ -26,7 +28,7 @@ tasks.withType<JavaCompile>().configureEach {
 
 tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions.jvmTarget = "13"
-    kotlinOptions.freeCompilerArgs += "-Xopt-in=kotlin.contracts.ExperimentalContracts"
+    kotlinOptions.freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
 }
 
 tasks.named<JavaCompile>("compileJava") {
@@ -89,6 +91,77 @@ tasks {
         reports {
             xml.isEnabled = true
             html.isEnabled = true
+        }
+    }
+
+
+    create<Jar>("sourceJar") {
+        archiveClassifier.set("sources")
+        from(sourceSets.main.get().allSource)
+    }
+
+    withType<Jar>().configureEach {
+        from(projectDir) {
+            include("LICENSE.txt")
+            include("NOTICE.md")
+        }
+    }
+}
+
+
+fun findProp(name: String) = findProperty(name)?.toString()?.takeIf { it.isNotBlank() }
+    ?: System.getenv(name.replace('.', '_').toUpperCase())?.takeIf { it.isNotBlank() }
+
+publishing {
+    repositories {
+        maven {
+            val prefix = if (isSnapshot) "asyncmc.repo.snapshot" else "asyncmc.repo.release"
+            url = uri(findProp("$prefix.url") ?: "$buildDir/repo")
+            when(findProp("$prefix.auth.type")) {
+                "password" -> credentials {
+                    username = findProp("$prefix.auth.username")
+                    password = findProp("$prefix.auth.password")
+                }
+                "aws" -> credentials(AwsCredentials::class.java) {
+                    accessKey = findProp("$prefix.auth.access_key")
+                    secretKey = findProp("$prefix.auth.secret_key")
+                    sessionToken = findProp("$prefix.auth.session_token")
+                }
+                "header" -> credentials(HttpHeaderCredentials::class.java) {
+                    name = findProp("$prefix.auth.header_name")
+                    value = findProp("$prefix.auth.header_value")
+                }
+            }
+        }
+    }
+
+    publications {
+        create<MavenPublication>("library") {
+            from(components["java"])
+            artifact(tasks["sourceJar"])
+            pom {
+                name.set("Internal Template")
+                description.set("This is just a template project")
+                url.set("https://github.com/AsyncMC/Internal-Template")
+                licenses {
+                    license {
+                        name.set("Public domain")
+                        url.set("https://github.com/AsyncMC/Internal-Template/LICENSE.txt")
+                    }
+                }
+                developers {
+                    developer {
+                        id.set("joserobjr")
+                        name.set("José Roberto de Araújo Júnior")
+                        email.set("joserobjr@gamemods.com.br")
+                    }
+                }
+                scm {
+                    url.set("https://github.com/AsyncMC/Internal-Template")
+                    connection.set("scm:git:https://github.com/AsyncMC/Internal-Template.git")
+                    developerConnection.set("https://github.com/AsyncMC/Internal-Template.git")
+                }
+            }
         }
     }
 }
