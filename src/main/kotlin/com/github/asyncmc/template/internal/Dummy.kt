@@ -1,4 +1,4 @@
-package dummy
+package com.github.asyncmc.template.internal
 
 class Dummy {
     fun codecov(areYouWorking: String) {
