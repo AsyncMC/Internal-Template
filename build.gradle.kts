@@ -1,18 +1,19 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.3.72"
+    kotlin("jvm") version "1.4.31"
     jacoco
 }
 
 java {
     sourceCompatibility = JavaVersion.VERSION_14
-    targetCompatibility = JavaVersion.VERSION_13
+    targetCompatibility = JavaVersion.VERSION_15
 }
 
-val moduleName = "com.github.asyncmc.protocol.bedrock"
+val moduleName = "com.github.asyncmc.template"
 
 repositories {
+    mavenCentral()
     jcenter()
     maven(url = "https://repo.gamemods.com.br/public/")
 }
@@ -25,7 +26,7 @@ tasks.withType<JavaCompile>().configureEach {
 }
 
 tasks.withType<KotlinCompile>().configureEach {
-    kotlinOptions.jvmTarget = "13"
+    kotlinOptions.jvmTarget = "15"
     kotlinOptions.freeCompilerArgs += "-Xopt-in=kotlin.contracts.ExperimentalContracts"
 }
 
@@ -74,6 +75,19 @@ tasks.withType<Test> {
     testLogging.showStandardStreams = true
     testLogging {
         events("PASSED", "FAILED", "SKIPPED", "STANDARD_OUT", "STANDARD_ERROR")
+    }
+}
+
+sourceSets {
+    main {
+        java {
+            outputDir = buildDir.resolve("classes/kotlin/main")
+        }
+    }
+    test {
+        java {
+            outputDir = buildDir.resolve("classes/kotlin/test")
+        }
     }
 }
 
